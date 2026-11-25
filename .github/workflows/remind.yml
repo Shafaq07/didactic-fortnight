@@ -1,0 +1,14 @@
+name: Reminders
+on:
+  schedule:
+    - cron: "17 3 * * *"    # 8:47 AM India time
+    - cron: "17 15 * * *"   # 8:47 PM India time
+  workflow_dispatch:
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 send.py
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}

@@ -1,0 +1,39 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stay Here</title><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png"><meta name="theme-color" content="#120f24">
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:system-ui,sans-serif;color:#f6f2ff;background:radial-gradient(circle at 20% 0,#43297a,#120f24 60%)}
+main{max-width:440px;margin:auto;padding:28px 18px}h1{font-size:15px;letter-spacing:3px;text-transform:uppercase;opacity:.7;text-align:center}
+.card{background:#ffffff12;border:1px solid #ffffff22;border-radius:24px;padding:22px;margin:16px 0;text-align:center}
+#msg{font:600 27px/1.35 Georgia,serif;min-height:150px;display:flex;align-items:center;justify-content:center}
+button{font:600 15px system-ui;border:0;border-radius:99px;padding:13px 20px;margin:5px;color:#120f24;background:linear-gradient(90deg,#ffd9a0,#ff7aa8);cursor:pointer}
+button.alt{background:#ffffff1f;color:#fff}#days{font-size:64px;font-weight:800}
+textarea{width:100%;height:230px;background:#0006;color:#fff;border:1px solid #fff3;border-radius:14px;padding:12px;font:14px/1.6 system-ui}summary{cursor:pointer;font-weight:600}
+</style></head><body><main>
+<h1>Stay Here</h1>
+<div class="card"><div id="msg">Loading…</div><button id="next">Another one</button></div>
+<div class="card"><div id="days">0</div><div>days staying away</div><br><button class="alt" id="reset">I slipped, start again</button></div>
+<div class="card"><button id="urge">I feel tempted</button><p id="timer">Press it and wait 60 seconds.</p></div>
+<details class="card"><summary>Edit my messages</summary><p>One per line.</p><textarea id="list"></textarea><br>
+<button id="save">Save</button><button class="alt" id="copy">Copy for GitHub</button><button class="alt" id="def">Restore originals</button>
+<p id="note">Saving changes this app only. For notifications, copy and paste into messages.json on GitHub.</p></details>
+</main><script>
+const $=id=>document.getElementById(id);
+const get=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+const set=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+let base=[],list=[],i=0,t;
+const today=()=>{const d=new Date();return Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5};
+function show(){$('msg').textContent=list[i%list.length]}
+function streak(){let s=+get('start');if(!s){s=today();set('start',s)}$('days').textContent=today()-s}
+function use(a){list=a.length?a:base;$('list').value=list.join('\n');show()}
+const lines=()=>$('list').value.split('\n').map(x=>x.trim()).filter(Boolean);
+$('next').onclick=()=>{i++;show()};
+$('reset').onclick=()=>{if(confirm('Restart the count? Starting again still counts.')){set('start',today());streak()}};
+$('urge').onclick=()=>{clearInterval(t);let end=Date.now()+60000;const tick=()=>{let s=Math.ceil((end-Date.now())/1000);if(s>0)$('timer').textContent=s+'s. Breathe slowly. Keep that app closed.';else{clearInterval(t);$('timer').textContent='You waited. Now go do one real thing.'}};tick();t=setInterval(tick,500);i++;show()};
+$('save').onclick=()=>{use(lines());set('mine',JSON.stringify(list));$('note').textContent='Saved on this phone.'};
+$('copy').onclick=()=>navigator.clipboard.writeText(JSON.stringify(lines(),null,1)).then(()=>$('note').textContent='Copied. Paste it over messages.json on GitHub.');
+$('def').onclick=()=>{set('mine','');use(base);$('note').textContent='Originals restored.'};
+fetch('messages.json').then(r=>r.json()).then(a=>{base=a;let m;try{m=JSON.parse(get('mine'))}catch(e){}i=Math.floor(Math.random()*a.length);use(m||a)}).catch(()=>$('msg').textContent='Open this from your GitHub Pages link.');
+streak();document.addEventListener('visibilitychange',streak);
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+</script></body></html>
